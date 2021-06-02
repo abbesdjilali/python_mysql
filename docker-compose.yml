@@ -1,0 +1,47 @@
+version: "3"
+services:
+  app:
+    build: ./app
+    links:
+      - db
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./.env
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - FLASK_DEBUG=1
+      - FLASK_APP=./app.py
+    depends_on: 
+      - db
+    container_name: python_mysql_app
+    restart: always
+
+  db:
+    image: mysql:latest
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "32000:3306"
+    restart: always
+    env_file:
+      - ./.env
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d/:ro
+      - .:/app
+    container_name: python_mysql_db
+
+  tests:
+    build: ./app
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d/:ro
+      - .:/app
+    command: ["pytest","./app/tests/test.py"]
+    container_name: python_mysql_test
